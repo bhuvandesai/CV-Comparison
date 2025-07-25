@@ -1,0 +1,16 @@
+{
+    "name": "cv-comparison-tool",
+    "version": "1.0.0",
+    "description": "A local CV comparison tool that automatically loads PDFs from a cv folder",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js",
+      "dev": "node server.js"
+    },
+    "dependencies": {
+      "express": "^4.18.2"
+    },
+    "keywords": ["cv", "comparison", "pdf", "local"],
+    "author": "",
+    "license": "MIT"
+  }

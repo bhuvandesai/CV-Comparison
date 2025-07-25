@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Comparison Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 200px);
+            padding: 60px;
+            text-align: center;
+        }
+
+        .welcome-content h2 {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .welcome-content p {
+            font-size: 1.3em;
+            color: #666;
+            margin-bottom: 50px;
+            line-height: 1.6;
+            max-width: 700px;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.4em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b5b95 100%);
+        }
+
+        .cta-button:active {
+            transform: translateY(-1px);
+        }
+
+        .comparison-view {
+            padding: 0 10px 10px 10px;
+            display: none;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 4px;
+            margin-top: 0;
+            padding: 2px 0 2px 0;
+            background: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+            min-height: 28px;
+        }
+
+        .nav-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
+            min-width: 48px;
+        }
+
+        .nav-button:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .counter {
+            font-size: 0.95em;
+            font-weight: 500;
+            color: #667eea;
+            margin: 0 10px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .pdf-container {
+            display: flex;
+            gap: 20px;
+            height: 800px;
+        }
+
+        .pdf-viewer {
+            flex: 1;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .pdf-header {
+            background: #f7fafc;
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #2d3748;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .pdf-content {
+            height: calc(100% - 60px);
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .error {
+            color: #e53e3e;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1em;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-button:hover {
+            background: rgba(102, 126, 234, 1);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .welcome-content h2 {
+                font-size: 2em;
+            }
+            
+            .welcome-content p {
+                font-size: 1.1em;
+            }
+            
+            .cta-button {
+                padding: 15px 35px;
+                font-size: 1.2em;
+            }
+            
+            .pdf-container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .pdf-viewer {
+                height: 400px;
+            }
+            
+            .navigation {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .back-button {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Removed header for minimal top space -->
+
+        <div id="welcomeScreen" class="welcome-screen">
+            <div class="welcome-content">
+                <h2>Ready to Compare CVs?</h2>
+                <p>Compare original and transformed CVs side by side.<br>
+                Navigate through multiple CV pairs with ease.</p>
+                <button class="cta-button" onclick="startComparison()">Let's Compare</button>
+            </div>
+        </div>
+
+        <div id="comparisonView" class="comparison-view">
+            <div class="navigation">
+                <button class="nav-button" id="prevButton" onclick="navigatePrev()">&#8592;</button>
+                <div class="counter">
+                    <span id="currentIndex">1</span> / <span id="totalPairs">0</span>
+                </div>
+                <button class="nav-button" id="nextButton" onclick="navigateNext()">&#8594;</button>
+            </div>
+            <button class="back-button" onclick="goBack()">&#8592; Back</button>
+            
+            <div class="pdf-container">
+                <div class="pdf-viewer">
+                    <div class="pdf-header">CV Version 1</div>
+                    <div class="pdf-content" id="version1Content">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+                <div class="pdf-viewer">
+                    <div class="pdf-header">CV Version 2</div>
+                    <div class="pdf-content" id="version2Content">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let cvPairs = [];
+        let currentPairIndex = 0;
+
+        async function startComparison() {
+            try {
+                // Fetch CV pairs from server
+                const response = await fetch('/api/cv-pairs');
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                cvPairs = data.pairs;
+                
+                if (cvPairs.length === 0) {
+                    alert('No CV pairs found in the cv folder. Please add PDF files with "original" and "transformed" in their names.');
+                    return;
+                }
+
+                // Show comparison view and load first pair immediately
+                showComparisonView();
+                currentPairIndex = 0;
+                loadCurrentPair();
+                
+            } catch (error) {
+                alert('Error loading CV pairs: ' + error.message);
+            }
+        }
+
+        function showComparisonView() {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('comparisonView').style.display = 'block';
+            
+            document.getElementById('totalPairs').textContent = cvPairs.length;
+            updateNavigationButtons();
+        }
+
+        function goBack() {
+            document.getElementById('comparisonView').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            
+            cvPairs = [];
+            currentPairIndex = 0;
+        }
+
+        function loadCurrentPair() {
+            if (cvPairs.length === 0) return;
+
+            const currentPair = cvPairs[currentPairIndex];
+            document.getElementById('currentIndex').textContent = currentPairIndex + 1;
+
+            loadPDF(currentPair.version1.path, 'version1Content');
+            loadPDF(currentPair.version2.path, 'version2Content');
+            updateNavigationButtons();
+        }
+
+        async function loadPDF(pdfPath, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '<div class="loading">Loading PDF...</div>';
+
+            try {
+                const pdf = await pdfjsLib.getDocument(pdfPath).promise;
+                const page = await pdf.getPage(1);
+
+                const scale = 1.2;
+                const viewport = page.getViewport({ scale });
+
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+
+                await page.render(renderContext).promise;
+                
+                container.innerHTML = '';
+                container.appendChild(canvas);
+
+            } catch (error) {
+                console.error('Error loading PDF:', error);
+                container.innerHTML = `<div class="error">Error loading PDF: ${error.message}</div>`;
+            }
+        }
+
+        function navigatePrev() {
+            if (currentPairIndex > 0) {
+                currentPairIndex--;
+                loadCurrentPair();
+            }
+        }
+
+        function navigateNext() {
+            if (currentPairIndex < cvPairs.length - 1) {
+                currentPairIndex++;
+                loadCurrentPair();
+            }
+        }
+
+        function updateNavigationButtons() {
+            document.getElementById('prevButton').disabled = currentPairIndex === 0;
+            document.getElementById('nextButton').disabled = currentPairIndex === cvPairs.length - 1;
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (event) => {
+            if (cvPairs.length > 0) {
+                if (event.key === 'ArrowLeft') {
+                    navigatePrev();
+                } else if (event.key === 'ArrowRight') {
+                    navigateNext();
+                } else if (event.key === 'Escape') {
+                    goBack();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
